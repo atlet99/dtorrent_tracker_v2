@@ -13,7 +13,7 @@ var torrentsPath =
     path.canonicalize(path.join(scriptDir, '..', '..', '..', 'torrents'));
 
 void main() async {
-  var _log = Logger.root;
+  var log = Logger.root;
   Logger.root.level = Level.ALL;
   Logger.root.onRecord.listen((record) {
     print(
@@ -35,7 +35,7 @@ void main() async {
     trackerListener
       ..on<AnnounceTrackerDisposedEvent>((event) {
         // if (reason != null && source is HttpTracker)
-        _log.info('Tracker disposed  , remain ${torrentTracker.trackersNum} :',
+        log.info('Tracker disposed  , remain ${torrentTracker.trackersNum} :',
             event.reason);
       })
       ..on<AnnounceErrorEvent>(
