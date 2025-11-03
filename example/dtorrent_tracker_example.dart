@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:dtorrent_common/dtorrent_common.dart';
 
 import 'package:dtorrent_parser/dtorrent_parser.dart';
-import 'package:dtorrent_tracker/dtorrent_tracker.dart';
+import 'package:dtorrent_tracker_v2/dtorrent_tracker.dart';
 import 'package:logging/logging.dart';
 import 'package:path/path.dart' as path;
 

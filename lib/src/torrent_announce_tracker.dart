@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:dtorrent_tracker/src/torrent_announce_events.dart';
-import 'package:dtorrent_tracker/src/tracker/peer_event.dart';
+import 'package:dtorrent_tracker_v2/src/torrent_announce_events.dart';
+import 'package:dtorrent_tracker_v2/src/tracker/peer_event.dart';
 import 'package:events_emitter2/events_emitter2.dart';
 
 import 'tracker/tracker.dart';
