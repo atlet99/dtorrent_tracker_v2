@@ -22,8 +22,7 @@ class HttpTracker extends Tracker with HttpTrackerBase {
   String? _currentEvent;
   HttpTracker(Uri uri, Uint8List infoHashBuffer,
       {AnnounceOptionsProvider? provider})
-      : super(
-            'http:${uri.host}:${uri.port}${uri.path}', uri, infoHashBuffer,
+      : super('http:${uri.host}:${uri.port}${uri.path}', uri, infoHashBuffer,
             provider: provider);
 
   String? get currentTrackerId {
@@ -32,20 +31,6 @@ class HttpTracker extends Tracker with HttpTrackerBase {
 
   String? get currentEvent {
     return _currentEvent;
-  }
-
-  @override
-  Future<PeerEvent?> stop([bool force = false]) async {
-    await close();
-    var f = super.stop(force);
-    return f;
-  }
-
-  @override
-  Future<PeerEvent?> complete() async {
-    await close();
-    var f = super.complete();
-    return f;
   }
 
   @override

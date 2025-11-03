@@ -3,8 +3,8 @@ import 'dart:math' as math;
 
 import 'dart:typed_data';
 
-import 'package:dtorrent_tracker/src/tracker/tracker_base.dart';
-import 'package:dtorrent_tracker/src/tracker/tracker_events.dart';
+import 'package:dtorrent_tracker_v2/src/tracker/tracker_base.dart';
+import 'package:dtorrent_tracker_v2/src/tracker/tracker_events.dart';
 import 'package:events_emitter2/events_emitter2.dart';
 
 import 'peer_event.dart';

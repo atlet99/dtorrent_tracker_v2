@@ -1,4 +1,4 @@
-import 'package:dtorrent_tracker/src/tracker/tracker_base.dart';
+import 'package:dtorrent_tracker_v2/src/tracker/tracker_base.dart';
 
 abstract class TorrentAnnounceEvent {}
 

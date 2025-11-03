@@ -48,3 +48,9 @@
 
 ## 1.3.18
 - use logging package
+
+## 1.3.19
+- Migrate package name to dtorrent_tracker_v2
+- Fix HttpTracker stop() and complete() events not being sent to announce server
+- Update all imports to use new package name
+- Update lints to ^6.0.0
