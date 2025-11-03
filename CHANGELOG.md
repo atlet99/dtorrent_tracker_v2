@@ -54,3 +54,5 @@
 - Fix HttpTracker stop() and complete() events not being sent to announce server
 - Update all imports to use new package name
 - Update lints to ^6.0.0
+- Fix analyzer warnings: add type annotations and fix doc comments
+- Update README

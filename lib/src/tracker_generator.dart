@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import '../dtorrent_tracker.dart';
+import '../dtorrent_tracker_v2.dart';
 
 abstract class TrackerGenerator {
   Tracker? createTracker(

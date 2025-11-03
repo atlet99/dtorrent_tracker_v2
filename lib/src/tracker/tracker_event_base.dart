@@ -6,11 +6,11 @@ class TrackerEventBase {
     return _others;
   }
 
-  void setInfo(key, value) {
+  void setInfo(dynamic key, dynamic value) {
     _others[key] = value;
   }
 
-  dynamic removeInfo(key) {
+  dynamic removeInfo(dynamic key) {
     return _others.remove(key);
   }
 }

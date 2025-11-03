@@ -1,25 +1,27 @@
 ## About
 
-Dart implementation of a BitTorrent Http/Https and UDP tracker/scrape client
+Dart implementation of a BitTorrent HTTP/HTTPS and UDP tracker/scrape client library.
 
-## Support
+## Supported Protocols
+
 - [BEP 0003 HTTP/HTTPS Tracker/Scrape](https://www.bittorrent.org/beps/bep_0003.html)
 - [BEP 0015 UDP Tracker/Scrape](https://www.bittorrent.org/beps/bep_0015.html)
 - [BEP 0007 IPv6 Tracker Extension](https://www.bittorrent.org/beps/bep_0007.html)
+
 ## How to use it
 
 ### Tracker
-To create the `TorrentAnnounceTracker` instance, the parameter `AnnounceOptionProvider` should be provided.
-Howerver, there is not any implements , user have to implement it manually:
+
+To create a `TorrentAnnounceTracker` instance, you need to provide an `AnnounceOptionsProvider`. Since there is no default implementation, you need to implement it manually:
 ```dart
 class SimpleProvider implements AnnounceOptionsProvider {
   SimpleProvider(this.torrent, this.peerId, this.port);
-  String peerId;
-  int port;
-  String infoHash;
-  Torrent torrent;
-  int compact = 1;
-  int numwant = 50;
+  
+  final String peerId;
+  final int port;
+  final Torrent torrent;
+  final int compact = 1;
+  final int numwant = 50;
 
   @override
   Future<Map<String, dynamic>> getOptions(Uri uri, String infoHash) {
@@ -27,54 +29,69 @@ class SimpleProvider implements AnnounceOptionsProvider {
       'downloaded': 0,
       'uploaded': 0,
       'left': torrent.length,
-      'compact': compact,// it should be 1
-      'numwant': numwant, // max is 50
+      'compact': compact, // Must be 1
+      'numwant': numwant, // Maximum is 50
       'peerId': peerId,
       'port': port
     });
   }
 }
 ```
-When we have the `AnnounceOptionsProvider` instance, we can create a `TorrentAnnounceTracker` like this:
-```dart
-    var torrentTracker = TorrentAnnounceTracker(SimpleProvider(....));
-```
-`TorrentAnnounceTracker` have some methods to run `started`,`stopped`,`completed` announce event:
-```dart
-    torrentTracker.runTracker(url,infohash,event:'started');
-```
-We can add some listener on the torrentTracker to get the announce result:
-```dart
-    torrentTracker.onAnnounceError((source, error) {
-      log('announce error:', error: error);
-    });
-    torrentTracker.onPeerEvent((source, event) {
-      print('${source.announceUrl} peer event: $event');
-    });
 
-    torrentTracker.onAnnounceOver((source, time) {
-      print('${source.announceUrl} announce over!: $time');
-      source.dispose();
-    });
+Create a `TorrentAnnounceTracker` instance:
+
+```dart
+var torrentTracker = TorrentAnnounceTracker(SimpleProvider(torrent, peerId, port));
+```
+
+Start tracker with different events:
+
+```dart
+torrentTracker.runTracker(url, infoHash, event: 'started');
+torrentTracker.runTracker(url, infoHash, event: 'completed');
+torrentTracker.runTracker(url, infoHash, event: 'stopped');
+```
+
+Listen to tracker events:
+
+```dart
+torrentTracker.onAnnounceError((source, error) {
+  log('Announce error: $error');
+});
+
+torrentTracker.onPeerEvent((source, event) {
+  print('${source.announceUrl} peer event: $event');
+});
+
+torrentTracker.onAnnounceOver((source, time) {
+  print('${source.announceUrl} announce completed in $time seconds');
+  source.dispose();
+});
 ```
 
 
 ### Scrape
+
 Create a `TorrentScrapeTracker` instance:
+
 ```dart
 var scrapeTracker = TorrentScrapeTracker();
 ```
-Then add the scrape url (same with the announce tracker url, TorrentScrapeTracker will transform it) and infohash buffer to create a `Scrape`:
+
+Add scrape URLs and info hash. The tracker will automatically transform announce URLs to scrape URLs:
+
 ```dart
 scrapeTracker.addScrapes(torrent.announces, torrent.infoHashBuffer);
 ```
-**NOTE**: The `Scrape` can add more than one infoHashbuffer , because it can "scrape" multiple torrent informations at one time, so if user invoke `addScrapes` or `addScrape` with same url but different infohashbuffer , it will return the same `Scrape` instance.
 
-To get the scrape result:
+**Note:** A single `Scrape` instance can handle multiple info hashes. If you call `addScrapes` or `addScrape` with the same URL but different info hash buffers, it will return the same `Scrape` instance, allowing you to scrape multiple torrents in one request.
+
+Get scrape results:
 
 ```dart
 scrapeTracker.scrape(torrent.infoHashBuffer).listen((event) {
-    print(event);
+  print(event);
 });
 ```
-The method `scrape` need a infoHashbuffer as the parameter and return a `Stream` , user can listen the `Stream` event to get the result.
+
+The `scrape` method takes an info hash buffer as a parameter and returns a `Stream`. Listen to the stream to receive scrape results.
