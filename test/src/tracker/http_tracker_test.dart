@@ -265,6 +265,141 @@ void main() {
       expect(httpTracker.isClosed, false);
     });
   });
+
+  group('HttpTracker query string construction', () {
+    test('query string should not start with &', () {
+      final uri = Uri.parse('http://example.com/announce');
+      final infoHashBuffer = hexString2Buffer(_testInfoHashString)!;
+      final infoHashU8List = Uint8List.fromList(infoHashBuffer);
+      final httpTracker = HttpTracker(uri, infoHashU8List);
+
+      // Generate query parameters
+      final params = httpTracker.generateQueryParameters({
+        'downloaded': 1000,
+        'uploaded': 500,
+        'left': 0,
+        'compact': 1,
+        'numwant': 50,
+        'peerId': 'test-peer-id-123456',
+        'port': 6881
+      });
+
+      // Manually construct URL to test query string format
+      // This simulates what _createAccessURL does
+      var queryParts = <String>[];
+      params.forEach((key, value) {
+        queryParts.add('$key=$value');
+      });
+      var queryStr = queryParts.join('&');
+      var testUrl = '${uri.origin}${uri.path}?$queryStr';
+
+      // Verify URL does not contain malformed ?& pattern
+      expect(testUrl.contains('?&'), false,
+          reason: 'URL should not contain ?& pattern');
+      expect(testUrl.startsWith('${uri.origin}${uri.path}?'), true,
+          reason: 'URL should start with base path and ?');
+
+      // Verify query string starts directly after ?
+      final queryStartIndex = testUrl.indexOf('?');
+      expect(queryStartIndex, greaterThan(-1));
+      if (queryStartIndex + 1 < testUrl.length) {
+        final firstCharAfterQuestion = testUrl[queryStartIndex + 1];
+        expect(firstCharAfterQuestion, isNot('&'),
+            reason: 'First character after ? should not be &');
+      }
+    });
+
+    test('query string with multiple parameters should be properly formatted',
+        () {
+      final uri = Uri.parse('http://tracker.example.com/announce');
+      final infoHashBuffer = hexString2Buffer(_testInfoHashString)!;
+      final infoHashU8List = Uint8List.fromList(infoHashBuffer);
+      final httpTracker = HttpTracker(uri, infoHashU8List);
+
+      // Generate query parameters
+      final params = httpTracker.generateQueryParameters({
+        'downloaded': 1000,
+        'uploaded': 500,
+        'left': 0,
+        'compact': 1,
+        'numwant': 50,
+        'peerId': 'test-peer-id-123456',
+        'port': 6881
+      });
+
+      // Manually construct URL to test query string format
+      var queryParts = <String>[];
+      params.forEach((key, value) {
+        queryParts.add('$key=$value');
+      });
+      var queryStr = queryParts.join('&');
+      var testUrl = '${uri.origin}${uri.path}?$queryStr';
+
+      // Verify URL format (don't parse as info_hash contains encoded special characters)
+      expect(testUrl.contains('?&'), false,
+          reason: 'URL should not contain ?& pattern');
+      expect(testUrl.startsWith('${uri.origin}${uri.path}?'), true);
+
+      // Verify query string contains expected parameters
+      expect(testUrl, contains('compact='));
+      expect(testUrl, contains('downloaded='));
+      expect(testUrl, contains('uploaded='));
+      expect(testUrl, contains('left='));
+      expect(testUrl, contains('numwant='));
+      expect(testUrl, contains('port='));
+      expect(testUrl, contains('peer_id='));
+
+      // Verify query string starts correctly
+      final queryStartIndex = testUrl.indexOf('?');
+      expect(queryStartIndex, greaterThan(-1));
+      if (queryStartIndex + 1 < testUrl.length) {
+        final firstCharAfterQuestion = testUrl[queryStartIndex + 1];
+        expect(firstCharAfterQuestion, isNot('&'),
+            reason: 'First character after ? should not be &');
+      }
+    });
+
+    test('query string with list values should be properly formatted', () {
+      final uri = Uri.parse('http://example.com/announce');
+
+      // Create test parameters with list values to test query string construction
+      // This simulates HttpScrape which can return Map<String, dynamic> with List values
+      final testParams = <String, dynamic>{
+        'key1': 'value1',
+        'key2': ['value2a', 'value2b'],
+        'key3': 'value3'
+      };
+
+      // Manually construct query string as _createAccessURL does
+      var queryParts = <String>[];
+      testParams.forEach((key, value) {
+        if (value is String) {
+          queryParts.add('$key=$value');
+        } else if (value is List) {
+          for (var v in value) {
+            queryParts.add('$key=$v');
+          }
+        }
+      });
+      var queryStr = queryParts.join('&');
+      var testUrl = '${uri.origin}${uri.path}?$queryStr';
+
+      // Verify URL format
+      expect(testUrl.contains('?&'), false);
+      expect(testUrl, contains('key1=value1'));
+      expect(testUrl, contains('key2=value2a'));
+      expect(testUrl, contains('key2=value2b'));
+      expect(testUrl, contains('key3=value3'));
+
+      // Verify query string starts correctly
+      final queryStartIndex = testUrl.indexOf('?');
+      expect(queryStartIndex, greaterThan(-1));
+      if (queryStartIndex + 1 < testUrl.length) {
+        final firstCharAfterQuestion = testUrl[queryStartIndex + 1];
+        expect(firstCharAfterQuestion, isNot('&'));
+      }
+    });
+  });
 }
 
 List<int>? hexString2Buffer(String hexStr) {

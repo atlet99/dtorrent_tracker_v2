@@ -72,30 +72,20 @@ mixin HttpTrackerBase {
     if (parameters == null || parameters.isEmpty) {
       throw Exception('Query params can not be empty');
     }
-    var queryStr = parameters.keys.fold<String>('', (previousValue, key) {
-      var values = parameters[key];
-      if (values is String) {
-        previousValue += '&$key=$values';
-        return previousValue;
-      }
-      if (values is List) {
-        for (var value in values) {
-          previousValue += '&$key=$value';
+    // Build query parts without leading &
+    var queryParts = <String>[];
+    parameters.forEach((key, value) {
+      if (value is String) {
+        queryParts.add('$key=$value');
+      } else if (value is List) {
+        for (var v in value) {
+          queryParts.add('$key=$v');
         }
-        return previousValue;
       }
-      return previousValue;
     });
-    // if (_queryStr.isNotEmpty) _queryStr = _queryStr.substring(1); scrape
-    var str = _rawUrl;
-    str = '${url.origin}${url.path}?';
-    if (!str.contains('?')) str += '?';
-    str += queryStr;
+    var queryStr = queryParts.join('&');
+    var str = '${url.origin}${url.path}?$queryStr';
     return str;
-  }
-
-  String get _rawUrl {
-    return '${url.origin}${url.path}';
   }
 
   ///
