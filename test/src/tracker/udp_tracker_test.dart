@@ -359,7 +359,6 @@ void main() {
       }
     });
 
-
     test('retry mechanism is implemented in _sendMessage', () {
       // This test verifies that the retry mechanism code exists
       // and can be configured via maxConnectRetryTimes

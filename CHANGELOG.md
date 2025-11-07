@@ -62,3 +62,4 @@
 - Implement UDP tracker timeout mechanism (TIME_OUT constant was defined but never used)
 - Add timeout tests for UDP tracker
 - Fix UDP retry mechanism: implement proper retry limit with exponential backoff (maxConnectRetryTimes was defined but never used)
+- Fix missing length validation in UDP Scrape response parsing (prevents IndexOutOfBounds exceptions on malformed responses)
