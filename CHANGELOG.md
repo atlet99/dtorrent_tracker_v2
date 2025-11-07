@@ -56,3 +56,6 @@
 - Update lints to ^6.0.0
 - Fix analyzer warnings: add type annotations and fix doc comments
 - Update README
+
+## 1.4.0
+- Fix IPv6 parsing in UDP tracker
