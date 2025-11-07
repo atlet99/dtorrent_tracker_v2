@@ -59,3 +59,5 @@
 
 ## 1.4.0
 - Fix IPv6 parsing in UDP tracker
+- Implement UDP tracker timeout mechanism (TIME_OUT constant was defined but never used)
+- Add timeout tests for UDP tracker
