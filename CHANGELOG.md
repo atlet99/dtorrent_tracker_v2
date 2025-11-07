@@ -61,3 +61,4 @@
 - Fix IPv6 parsing in UDP tracker
 - Implement UDP tracker timeout mechanism (TIME_OUT constant was defined but never used)
 - Add timeout tests for UDP tracker
+- Fix UDP retry mechanism: implement proper retry limit with exponential backoff (maxConnectRetryTimes was defined but never used)
