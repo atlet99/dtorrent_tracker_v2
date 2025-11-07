@@ -43,6 +43,9 @@ mixin UDPTrackerBase {
   ///  second message.
   Uint8List? _connectionId;
 
+  /// Timeout timer for request/response cycle
+  Timer? _timeoutTimer;
+
   /// Remote URL
   // Uri get uri;
 
@@ -110,10 +113,21 @@ mixin UDPTrackerBase {
     }
     _socket?.close();
     _socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
+
+    // Start timeout timer
+    _timeoutTimer = Timer(TIME_OUT, () {
+      if (!completer.isCompleted) {
+        close();
+        completer.completeError(
+            'Request timeout after ${TIME_OUT.inSeconds} seconds');
+      }
+    });
+
     _socket?.listen((event) async {
       if (event == RawSocketEvent.read) {
         var datagram = _socket?.receive();
         if (datagram == null || datagram.data.length < 8) {
+          _timeoutTimer?.cancel();
           close();
           completer.completeError('Wrong datas');
           return;
@@ -121,10 +135,12 @@ mixin UDPTrackerBase {
         _processAnnounceResponseData(datagram.data, options, adds, completer);
       }
     }, onError: (e) async {
+      _timeoutTimer?.cancel();
       close();
       handleSocketError(e);
       if (!completer.isCompleted) completer.completeError(e);
     }, onDone: () {
+      _timeoutTimer?.cancel();
       handleSocketDone();
       if (!completer.isCompleted) completer.completeError('Socket closed');
     });
@@ -170,6 +186,7 @@ mixin UDPTrackerBase {
   void _processAnnounceResponseData(Uint8List data, Map options,
       List<CompactAddress> address, Completer completer) async {
     if (isClosed) {
+      _timeoutTimer?.cancel();
       if (!completer.isCompleted) completer.completeError('Tracker Closed');
       return;
     }
@@ -183,10 +200,12 @@ mixin UDPTrackerBase {
             16); //The 8th to 16th bits of the returned information are the connection ID for the next connection
         await _announce(
             _connectionId!, options, address); // Continue, don't stop
+        // Don't cancel timeout yet - we're still waiting for the announce response
         return;
       }
       // An error occurred.
       if (action == 3) {
+        _timeoutTimer?.cancel();
         var errorMsg = 'Unknown error';
         try {
           errorMsg = String.fromCharCodes(data.sublist(8));
@@ -200,6 +219,7 @@ mixin UDPTrackerBase {
         return;
       }
       // Announce receives the returned result
+      _timeoutTimer?.cancel();
       try {
         var result = processResponseData(data, action, address);
         completer.complete(result);
@@ -208,6 +228,7 @@ mixin UDPTrackerBase {
       }
       close();
     } else {
+      _timeoutTimer?.cancel();
       if (!completer.isCompleted) {
         completer.completeError('Transacation ID incorrect');
       }
@@ -218,6 +239,8 @@ mixin UDPTrackerBase {
   /// Close the connection and clear settings
   Future<void> close() {
     _closed = true;
+    _timeoutTimer?.cancel();
+    _timeoutTimer = null;
     _socket?.close();
     _socket = null;
     return Future.wait([]);
