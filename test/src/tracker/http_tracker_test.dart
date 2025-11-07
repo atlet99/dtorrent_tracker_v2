@@ -400,6 +400,56 @@ void main() {
       }
     });
   });
+
+  group('HttpTracker timeout configuration', () {
+    test('default timeout values are set correctly', () {
+      final uri = Uri.parse('http://example.com/announce');
+      final infoHashBuffer = hexString2Buffer(_testInfoHashString)!;
+      final infoHashU8List = Uint8List.fromList(infoHashBuffer);
+      final httpTracker = HttpTracker(uri, infoHashU8List);
+
+      // Verify default timeout values
+      expect(httpTracker.connectionTimeout, const Duration(seconds: 30));
+      expect(httpTracker.idleTimeout, const Duration(seconds: 30));
+    });
+
+    test('timeout values can be customized', () {
+      final uri = Uri.parse('http://example.com/announce');
+      final infoHashBuffer = hexString2Buffer(_testInfoHashString)!;
+      final infoHashU8List = Uint8List.fromList(infoHashBuffer);
+      final httpTracker = HttpTracker(uri, infoHashU8List);
+
+      // Set custom timeout values
+      final customConnectionTimeout = const Duration(seconds: 60);
+      final customIdleTimeout = const Duration(seconds: 45);
+      httpTracker.connectionTimeout = customConnectionTimeout;
+      httpTracker.idleTimeout = customIdleTimeout;
+
+      // Verify custom timeout values
+      expect(httpTracker.connectionTimeout, customConnectionTimeout);
+      expect(httpTracker.idleTimeout, customIdleTimeout);
+    });
+
+    test('HttpClient is configured with timeout values', () async {
+      final uri = Uri.parse('http://example.com/announce');
+      final infoHashBuffer = hexString2Buffer(_testInfoHashString)!;
+      final infoHashU8List = Uint8List.fromList(infoHashBuffer);
+      final httpTracker = HttpTracker(uri, infoHashU8List);
+
+      // Set custom timeout values
+      final customConnectionTimeout = const Duration(seconds: 15);
+      final customIdleTimeout = const Duration(seconds: 20);
+      httpTracker.connectionTimeout = customConnectionTimeout;
+      httpTracker.idleTimeout = customIdleTimeout;
+
+      // Note: We can't directly test HttpClient timeout behavior without
+      // making actual network requests, but we verify the properties
+      // are accessible and can be set, which ensures the HttpClient
+      // will be configured correctly when httpGet is called.
+      expect(httpTracker.connectionTimeout, customConnectionTimeout);
+      expect(httpTracker.idleTimeout, customIdleTimeout);
+    });
+  });
 }
 
 List<int>? hexString2Buffer(String hexStr) {

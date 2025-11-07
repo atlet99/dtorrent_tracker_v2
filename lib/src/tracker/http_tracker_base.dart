@@ -36,6 +36,16 @@ mixin HttpTrackerBase {
   HttpClientRequest? _request;
   StreamSubscription? _sc;
 
+  /// Connection timeout for HTTP client.
+  /// Maximum time to establish a connection to the tracker.
+  /// Default: 30 seconds.
+  Duration connectionTimeout = const Duration(seconds: 30);
+
+  /// Idle timeout for HTTP client.
+  /// Maximum time between data packets during communication.
+  /// Default: 30 seconds.
+  Duration idleTimeout = const Duration(seconds: 30);
+
   /// Return a map with query params.
   /// [options] is a map , it help to generate paramter
   ///
@@ -131,7 +141,9 @@ mixin HttpTrackerBase {
       var url = _createAccessURL(options);
       var uri = Uri.parse(url);
       _httpClient?.close();
-      _httpClient = HttpClient();
+      _httpClient = HttpClient()
+        ..connectionTimeout = connectionTimeout
+        ..idleTimeout = idleTimeout;
       _request?.abort();
       _request = await _httpClient?.getUrl(uri);
       var response = await _request?.close();
