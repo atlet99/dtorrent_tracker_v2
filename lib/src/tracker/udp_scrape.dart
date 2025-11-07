@@ -2,10 +2,13 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dtorrent_common/dtorrent_common.dart';
+import 'package:logging/logging.dart';
 
 import 'scrape_event.dart';
 import 'udp_tracker_base.dart';
 import 'scrape.dart';
+
+var _log = Logger('UDPScrape');
 
 /// Take a look : [UDP Scrape Specification](http://xbtt.sourceforge.net/udp_tracker_protocol.html)
 class UDPScrape extends Scrape with UDPTrackerBase {
@@ -46,19 +49,59 @@ class UDPScrape extends Scrape with UDPTrackerBase {
   dynamic processResponseData(
       Uint8List data, int action, Iterable<CompactAddress> addresses) {
     var event = ScrapeEvent(scrapeUrl);
+
     if (action != 2) {
       throw Exception('The Action in the returned data does not match.');
     }
+
+    // Validate minimum length: 8 bytes (Action + Transaction ID) + 12 bytes per info_hash
+    var expectedLength = 8 + (infoHashSet.length * 12);
+    if (data.length < expectedLength) {
+      throw Exception(
+        'Invalid scrape response length: expected at least $expectedLength bytes '
+        '(8 bytes header + 12 bytes × ${infoHashSet.length} info_hashes), '
+        'got ${data.length} bytes',
+      );
+    }
+
     var view = ByteData.view(data.buffer);
     var i = 0;
-    for (var index = 8; index < data.length; index += 12, i++) {
-      var file = ScrapeResult(
-          transformBufferToHexString(infoHashSet.elementAt(i)),
-          complete: view.getUint32(index),
-          downloaded: view.getUint32(index + 4),
-          incomplete: view.getUint32(index + 8));
-      event.addFile(file.infoHash, file);
+
+    try {
+      for (var index = 8; index < expectedLength; index += 12, i++) {
+        // Additional bounds check for safety
+        if (index + 12 > data.length) {
+          throw Exception(
+            'Insufficient data at index $index: need 12 bytes, '
+            'only ${data.length - index} bytes remaining',
+          );
+        }
+
+        if (i >= infoHashSet.length) {
+          _log.warning(
+            'Received more scrape entries (${i + 1}) than requested '
+            '(${infoHashSet.length}), ignoring extra entries',
+          );
+          break;
+        }
+
+        var file = ScrapeResult(
+            transformBufferToHexString(infoHashSet.elementAt(i)),
+            complete: view.getUint32(index),
+            downloaded: view.getUint32(index + 4),
+            incomplete: view.getUint32(index + 8));
+        event.addFile(file.infoHash, file);
+      }
+    } catch (e) {
+      if (e is Exception && e.toString().contains('Index')) {
+        throw Exception(
+          'Failed to parse scrape response: $e. '
+          'Data length: ${data.length}, Expected: $expectedLength',
+        );
+      }
+      rethrow;
     }
+
     return event;
   }
 
