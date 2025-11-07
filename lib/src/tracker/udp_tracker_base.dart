@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dtorrent_common/dtorrent_common.dart';
+import 'package:logging/logging.dart';
 
 /// During the first connection, the connection ID is set by yourself, and all
 /// documents mention using this number, referring to it as a "magic number."
@@ -20,6 +21,8 @@ const ACTION_ERROR = [0, 0, 0, 3];
 const TIME_OUT = Duration(seconds: 15);
 
 const EVENTS = <String, int>{'completed': 1, 'started': 2, 'stopped': 3};
+
+var _log = Logger('UDPTrackerBase');
 
 ///
 /// The access steps for announce and scrape are exactly the same;
@@ -247,7 +250,11 @@ mixin UDPTrackerBase {
   }
 
   /// Send a data packet to a specific IP address
-  void _sendMessage(Uint8List message, List<CompactAddress> addresses) {
+  ///
+  /// Implements retry mechanism with exponential backoff.
+  /// Retries up to [maxConnectRetryTimes] times before giving up.
+  void _sendMessage(Uint8List message, List<CompactAddress> addresses,
+      {int retryCount = 0}) {
     if (isClosed) return;
     var success = false;
     for (var element in addresses) {
@@ -255,7 +262,23 @@ mixin UDPTrackerBase {
       if (bytes != 0) success = true;
     }
     if (!success) {
-      Timer.run(() => _sendMessage(message, addresses));
+      if (retryCount >= maxConnectRetryTimes) {
+        _log.warning(
+          'Failed to send UDP message after $maxConnectRetryTimes attempts, giving up',
+        );
+        handleSocketError(
+            'Failed to send message after $maxConnectRetryTimes retries');
+        return;
+      }
+
+      // Exponential backoff: 100ms, 200ms, 400ms, etc.
+      var delay = Duration(milliseconds: 100 * (1 << retryCount));
+      _log.fine(
+          'Retrying UDP message send (attempt ${retryCount + 1}/$maxConnectRetryTimes) after ${delay.inMilliseconds}ms');
+
+      Timer(delay, () {
+        _sendMessage(message, addresses, retryCount: retryCount + 1);
+      });
     }
   }
 }
