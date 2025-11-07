@@ -86,6 +86,10 @@ class UDPTracker extends Tracker with UDPTrackerBase {
         incomplete: view.getUint32(16),
         complete: view.getUint32(12));
     var ips = data.sublist(20);
+    if (addresses.isEmpty) {
+      _log.warning('No addresses available for determining peer address type');
+      return event;
+    }
     var add = addresses.elementAt(0);
     var type = add.address.type;
     try {
@@ -95,7 +99,7 @@ class UDPTracker extends Tracker with UDPTrackerBase {
           event.addPeer(c);
         }
       } else if (type == InternetAddressType.IPv6) {
-        var list = CompactAddress.parseIPv4Addresses(ips);
+        var list = CompactAddress.parseIPv6Addresses(ips);
         for (var c in list) {
           event.addPeer(c);
         }
