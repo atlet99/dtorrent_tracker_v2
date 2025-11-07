@@ -63,3 +63,4 @@
 - Add timeout tests for UDP tracker
 - Fix UDP retry mechanism: implement proper retry limit with exponential backoff (maxConnectRetryTimes was defined but never used)
 - Fix missing length validation in UDP Scrape response parsing (prevents IndexOutOfBounds exceptions on malformed responses)
+- Fix query string construction in HttpTrackerBase: remove leading & character that caused malformed URLs like `?&key=value` instead of `?key=value`
